@@ -17,11 +17,28 @@ import {
   Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarShortcut,
+  MenubarTrigger,
+} from '@/components/ui/menubar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function Excel() {
   const [selectedCell, setSelectedCell] = useState('A1');
   const [cellData, setCellData] = useState<Record<string, string>>({});
   const [currentValue, setCurrentValue] = useState('');
+  const [fontSize, setFontSize] = useState('12');
 
   const columns = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
   const rows = Array.from({ length: 50 }, (_, i) => i + 1);
@@ -59,14 +76,83 @@ export default function Excel() {
 
       {/* Menu Bar */}
       <div className="bg-white border-b border-gray-200 px-4 py-1">
-        <div className="flex space-x-6 text-sm">
-          <Button variant="ghost" size="sm">File</Button>
-          <Button variant="ghost" size="sm">Edit</Button>
-          <Button variant="ghost" size="sm">Insert</Button>
-          <Button variant="ghost" size="sm">Format</Button>
-          <Button variant="ghost" size="sm">Data</Button>
-          <Button variant="ghost" size="sm">Help</Button>
-        </div>
+        <Menubar className="border-none bg-transparent p-0 h-auto">
+          <MenubarMenu>
+            <MenubarTrigger>File</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem>
+                New <MenubarShortcut>⌘N</MenubarShortcut>
+              </MenubarItem>
+              <MenubarItem>
+                Open <MenubarShortcut>⌘O</MenubarShortcut>
+              </MenubarItem>
+              <MenubarItem>
+                Save <MenubarShortcut>⌘S</MenubarShortcut>
+              </MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem>Print</MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem>Exit</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger>Edit</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem>
+                Undo <MenubarShortcut>⌘Z</MenubarShortcut>
+              </MenubarItem>
+              <MenubarItem>
+                Redo <MenubarShortcut>⌘⇧Z</MenubarShortcut>
+              </MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem>
+                Cut <MenubarShortcut>⌘X</MenubarShortcut>
+              </MenubarItem>
+              <MenubarItem>
+                Copy <MenubarShortcut>⌘C</MenubarShortcut>
+              </MenubarItem>
+              <MenubarItem>
+                Paste <MenubarShortcut>⌘V</MenubarShortcut>
+              </MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger>Insert</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem>Row</MenubarItem>
+              <MenubarItem>Column</MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem>Chart</MenubarItem>
+              <MenubarItem>Image</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger>Format</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem>Cells</MenubarItem>
+              <MenubarItem>Row</MenubarItem>
+              <MenubarItem>Column</MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem>Conditional Formatting</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger>Data</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem>Sort</MenubarItem>
+              <MenubarItem>Filter</MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem>Validation</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger>Help</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem>Documentation</MenubarItem>
+              <MenubarItem>About</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>
       </div>
 
       {/* Toolbar */}
@@ -96,10 +182,26 @@ export default function Excel() {
           <div className="w-px h-6 bg-gray-300 mx-2"></div>
           
           {/* Font Size */}
-          <div className="flex items-center space-x-1 bg-white border border-gray-300 rounded px-2 py-1">
-            <span className="text-sm">12</span>
-            <ChevronDown className="w-3 h-3" />
-          </div>
+          <Select value={fontSize} onValueChange={setFontSize}>
+            <SelectTrigger className="w-16 h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="8">8</SelectItem>
+              <SelectItem value="9">9</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="11">11</SelectItem>
+              <SelectItem value="12">12</SelectItem>
+              <SelectItem value="14">14</SelectItem>
+              <SelectItem value="16">16</SelectItem>
+              <SelectItem value="18">18</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="24">24</SelectItem>
+              <SelectItem value="28">28</SelectItem>
+              <SelectItem value="32">32</SelectItem>
+              <SelectItem value="36">36</SelectItem>
+            </SelectContent>
+          </Select>
           
           {/* Text Formatting */}
           <Button variant="ghost" size="icon" className="font-bold">B</Button>
