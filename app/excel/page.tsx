@@ -61,8 +61,78 @@ export default function Excel() {
 
   const getCellId = (col: string, row: number) => `${col}${row}`;
 
+  const moveSelectedCell = (direction: 'up' | 'down' | 'left' | 'right') => {
+    const currentCol = selectedCell.match(/[A-Z]+/)?.[0] || 'A';
+    const currentRow = parseInt(selectedCell.match(/\d+/)?.[0] || '1');
+    
+    let newCol = currentCol;
+    let newRow = currentRow;
+    
+    switch (direction) {
+      case 'up':
+        newRow = Math.max(1, currentRow - 1);
+        break;
+      case 'down':
+        newRow = Math.min(rows.length, currentRow + 1);
+        break;
+      case 'left':
+        const colIndex = columns.indexOf(currentCol);
+        if (colIndex > 0) {
+          newCol = columns[colIndex - 1];
+        }
+        break;
+      case 'right':
+        const colIndexRight = columns.indexOf(currentCol);
+        if (colIndexRight < columns.length - 1) {
+          newCol = columns[colIndexRight + 1];
+        }
+        break;
+    }
+    
+    const newCellId = getCellId(newCol, newRow);
+    setSelectedCell(newCellId);
+    setCurrentValue(cellData[newCellId] || '');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowUp':
+        e.preventDefault();
+        moveSelectedCell('up');
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        moveSelectedCell('down');
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        moveSelectedCell('left');
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        moveSelectedCell('right');
+        break;
+      case 'Tab':
+        e.preventDefault();
+        if (e.shiftKey) {
+          moveSelectedCell('left');
+        } else {
+          moveSelectedCell('right');
+        }
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (e.shiftKey) {
+          moveSelectedCell('up');
+        } else {
+          moveSelectedCell('down');
+        }
+        break;
+    }
+  };
+
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-gray-50 flex flex-col" onKeyDown={handleKeyDown} tabIndex={0}>
       {/* Top Bar */}
       <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
         <div className="flex items-center space-x-3">
