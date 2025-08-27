@@ -9,14 +9,11 @@ import {
   Copy, 
   Scissors, 
   Type, 
-  Bold, 
-  Italic, 
-  Underline, 
-  Strikethrough,
   ChevronDown,
   Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
 import {
   Menubar,
   MenubarContent,
@@ -39,6 +36,12 @@ export default function Excel() {
   const [cellData, setCellData] = useState<Record<string, string>>({});
   const [currentValue, setCurrentValue] = useState('');
   const [fontSize, setFontSize] = useState('12');
+  const [textFormatting, setTextFormatting] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikethrough: false,
+  });
 
   const columns = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
   const rows = Array.from({ length: 50 }, (_, i) => i + 1);
@@ -204,10 +207,46 @@ export default function Excel() {
           </Select>
           
           {/* Text Formatting */}
-          <Button variant="ghost" size="icon" className="font-bold">B</Button>
-          <Button variant="ghost" size="icon" className="italic">I</Button>
-          <Button variant="ghost" size="icon" className="underline">U</Button>
-          <Button variant="ghost" size="icon" className="line-through">S</Button>
+          <Toggle
+            size="sm"
+            pressed={textFormatting.bold}
+            onPressedChange={(pressed) =>
+              setTextFormatting(prev => ({ ...prev, bold: pressed }))
+            }
+            className="font-bold w-8 h-8"
+          >
+            B
+          </Toggle>
+          <Toggle
+            size="sm"
+            pressed={textFormatting.italic}
+            onPressedChange={(pressed) =>
+              setTextFormatting(prev => ({ ...prev, italic: pressed }))
+            }
+            className="italic w-8 h-8"
+          >
+            I
+          </Toggle>
+          <Toggle
+            size="sm"
+            pressed={textFormatting.underline}
+            onPressedChange={(pressed) =>
+              setTextFormatting(prev => ({ ...prev, underline: pressed }))
+            }
+            className="underline w-8 h-8"
+          >
+            U
+          </Toggle>
+          <Toggle
+            size="sm"
+            pressed={textFormatting.strikethrough}
+            onPressedChange={(pressed) =>
+              setTextFormatting(prev => ({ ...prev, strikethrough: pressed }))
+            }
+            className="line-through w-8 h-8"
+          >
+            S
+          </Toggle>
           
           <div className="w-px h-6 bg-gray-300 mx-2"></div>
           
