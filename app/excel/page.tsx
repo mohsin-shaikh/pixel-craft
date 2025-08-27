@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Grid, 
   Edit, 
@@ -11,7 +11,8 @@ import {
   Type, 
   ChevronDown,
   Pencil,
-  Clipboard
+  Clipboard,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
@@ -44,56 +45,104 @@ export default function Excel() {
     strikethrough: false,
   });
   const [isEditing, setIsEditing] = useState(false);
-  const [clipboard, setClipboard] = useState<{ type: 'cut' | 'copy'; data: string; cellId: string } | null>(null);
+  const [clipboard, setClipboard] = useState<{ type: 'cut' | 'copy'; data: Record<string, string>; range: string } | null>(null);
+  const [selection, setSelection] = useState<{
+    type: 'cell' | 'row' | 'column' | 'sheet';
+    startCell: string;
+    endCell?: string;
+    selectedCells: Set<string>;
+  }>({
+    type: 'cell',
+    startCell: 'A1',
+    selectedCells: new Set(['A1'])
+  });
 
   const columns = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
   const rows = Array.from({ length: 50 }, (_, i) => i + 1);
 
+  // Ensure container is focused for keyboard navigation
+  useEffect(() => {
+    const container = document.querySelector('[tabindex="0"]') as HTMLElement;
+    if (container) {
+      container.focus();
+    }
+  }, []);
+
   const handleCellClick = (cellId: string) => {
-    setSelectedCell(cellId);
-    setCurrentValue(cellData[cellId] || '');
+    selectCell(cellId);
     setIsEditing(false);
+    // Refocus the container for keyboard navigation
+    const container = document.querySelector('[tabindex="0"]') as HTMLElement;
+    if (container) {
+      container.focus();
+    }
   };
 
   const handleCellDoubleClick = (cellId: string) => {
-    setSelectedCell(cellId);
-    setCurrentValue(cellData[cellId] || '');
+    selectCell(cellId);
     setIsEditing(true);
   };
 
   const handleCopy = () => {
-    const data = cellData[selectedCell] || '';
-    setClipboard({ type: 'copy', data, cellId: selectedCell });
-    // Also copy to system clipboard
-    navigator.clipboard.writeText(data).catch(() => {
-      // Fallback if clipboard API is not available
+    const selectedData: Record<string, string> = {};
+    selection.selectedCells.forEach(cellId => {
+      selectedData[cellId] = cellData[cellId] || '';
+    });
+    
+    setClipboard({ 
+      type: 'copy', 
+      data: selectedData, 
+      range: selection.type === 'cell' ? selectedCell : `${selection.startCell}:${selection.endCell || selection.startCell}` 
+    });
+    
+    // Also copy to system clipboard as tab-separated values
+    const clipboardText = Array.from(selection.selectedCells)
+      .map(cellId => cellData[cellId] || '')
+      .join('\t');
+    navigator.clipboard.writeText(clipboardText).catch(() => {
       console.log('Clipboard API not available');
     });
   };
 
   const handleCut = () => {
-    const data = cellData[selectedCell] || '';
-    setClipboard({ type: 'cut', data, cellId: selectedCell });
-    // Clear the cell data
+    const selectedData: Record<string, string> = {};
+    selection.selectedCells.forEach(cellId => {
+      selectedData[cellId] = cellData[cellId] || '';
+    });
+    
+    setClipboard({ 
+      type: 'cut', 
+      data: selectedData, 
+      range: selection.type === 'cell' ? selectedCell : `${selection.startCell}:${selection.endCell || selection.startCell}` 
+    });
+    
+    // Clear the selected cells
     setCellData(prev => {
       const newData = { ...prev };
-      delete newData[selectedCell];
+      selection.selectedCells.forEach(cellId => {
+        delete newData[cellId];
+      });
       return newData;
     });
+    
     setCurrentValue('');
+    
     // Also copy to system clipboard
-    navigator.clipboard.writeText(data).catch(() => {
+    const clipboardText = Array.from(selection.selectedCells)
+      .map(cellId => cellData[cellId] || '')
+      .join('\t');
+    navigator.clipboard.writeText(clipboardText).catch(() => {
       console.log('Clipboard API not available');
     });
   };
 
   const handlePaste = () => {
     if (clipboard) {
+      // Paste to selected cell/range
       setCellData(prev => ({
         ...prev,
-        [selectedCell]: clipboard.data
+        ...clipboard.data
       }));
-      setCurrentValue(clipboard.data);
       
       // If it was a cut operation, clear the clipboard
       if (clipboard.type === 'cut') {
@@ -102,15 +151,36 @@ export default function Excel() {
     } else {
       // Try to paste from system clipboard
       navigator.clipboard.readText().then(text => {
-        setCellData(prev => ({
-          ...prev,
-          [selectedCell]: text
-        }));
-        setCurrentValue(text);
+        const lines = text.split('\n');
+        const cells = lines[0].split('\t');
+        
+        // Paste to selected cell and adjacent cells
+        cells.forEach((cellValue, index) => {
+          const targetCell = getAdjacentCell(selectedCell, index, 0);
+          if (targetCell) {
+            setCellData(prev => ({
+              ...prev,
+              [targetCell]: cellValue
+            }));
+          }
+        });
       }).catch(() => {
         console.log('Clipboard API not available');
       });
     }
+  };
+
+  const handleDelete = () => {
+    // Clear all selected cells
+    setCellData(prev => {
+      const newData = { ...prev };
+      selection.selectedCells.forEach(cellId => {
+        delete newData[cellId];
+      });
+      return newData;
+    });
+    
+    setCurrentValue('');
   };
 
   const handleCellChange = (value: string) => {
@@ -123,7 +193,77 @@ export default function Excel() {
 
   const getCellId = (col: string, row: number) => `${col}${row}`;
 
+  const getAdjacentCell = (cellId: string, colOffset: number, rowOffset: number): string | null => {
+    const col = cellId.match(/[A-Z]+/)?.[0] || 'A';
+    const row = parseInt(cellId.match(/\d+/)?.[0] || '1');
+    
+    const colIndex = columns.indexOf(col);
+    const newColIndex = colIndex + colOffset;
+    const newRow = row + rowOffset;
+    
+    if (newColIndex < 0 || newColIndex >= columns.length || newRow < 1 || newRow > rows.length) {
+      return null;
+    }
+    
+    return getCellId(columns[newColIndex], newRow);
+  };
+
+  const selectRow = (rowNumber: number) => {
+    const selectedCells = new Set<string>();
+    columns.forEach(col => {
+      selectedCells.add(getCellId(col, rowNumber));
+    });
+    
+    setSelection({
+      type: 'row',
+      startCell: getCellId('A', rowNumber),
+      endCell: getCellId(columns[columns.length - 1], rowNumber),
+      selectedCells
+    });
+  };
+
+  const selectColumn = (colLetter: string) => {
+    const selectedCells = new Set<string>();
+    rows.forEach(row => {
+      selectedCells.add(getCellId(colLetter, row));
+    });
+    
+    setSelection({
+      type: 'column',
+      startCell: getCellId(colLetter, 1),
+      endCell: getCellId(colLetter, rows.length),
+      selectedCells
+    });
+  };
+
+  const selectSheet = () => {
+    const selectedCells = new Set<string>();
+    columns.forEach(col => {
+      rows.forEach(row => {
+        selectedCells.add(getCellId(col, row));
+      });
+    });
+    
+    setSelection({
+      type: 'sheet',
+      startCell: 'A1',
+      endCell: getCellId(columns[columns.length - 1], rows.length),
+      selectedCells
+    });
+  };
+
+  const selectCell = (cellId: string) => {
+    setSelection({
+      type: 'cell',
+      startCell: cellId,
+      selectedCells: new Set([cellId])
+    });
+    setSelectedCell(cellId);
+    setCurrentValue(cellData[cellId] || '');
+  };
+
   const moveSelectedCell = (direction: 'up' | 'down' | 'left' | 'right') => {
+    console.log('Moving cell:', direction, 'from:', selectedCell);
     const currentCol = selectedCell.match(/[A-Z]+/)?.[0] || 'A';
     const currentRow = parseInt(selectedCell.match(/\d+/)?.[0] || '1');
     
@@ -152,11 +292,12 @@ export default function Excel() {
     }
     
     const newCellId = getCellId(newCol, newRow);
-    setSelectedCell(newCellId);
-    setCurrentValue(cellData[newCellId] || '');
+    selectCell(newCellId);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    console.log('Key pressed:', e.key, 'Ctrl:', e.ctrlKey, 'Meta:', e.metaKey);
+    
     // Handle clipboard shortcuts first
     if (e.ctrlKey || e.metaKey) {
       switch (e.key.toLowerCase()) {
@@ -172,7 +313,18 @@ export default function Excel() {
           e.preventDefault();
           handlePaste();
           return;
+        case 'a':
+          e.preventDefault();
+          selectSheet();
+          return;
       }
+    }
+
+    // Handle delete key
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      handleDelete();
+      return;
     }
 
     // If we're editing a cell, don't handle navigation keys
@@ -240,7 +392,20 @@ export default function Excel() {
   };
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col" onKeyDown={handleKeyDown} tabIndex={0}>
+    <div 
+      className="h-screen bg-gray-50 flex flex-col" 
+      onKeyDown={handleKeyDown} 
+      tabIndex={0}
+      onFocus={() => console.log('Container focused')}
+      onBlur={() => console.log('Container blurred')}
+      onClick={() => {
+        const container = document.querySelector('[tabindex="0"]') as HTMLElement;
+        if (container) {
+          container.focus();
+        }
+      }}
+      autoFocus
+    >
       {/* Top Bar */}
       <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -362,6 +527,13 @@ export default function Excel() {
           
           <div className="w-px h-6 bg-gray-300 mx-2"></div>
           
+          {/* Delete */}
+          <Button variant="ghost" size="icon" onClick={handleDelete} title="Delete (Del)">
+            <Trash2 className="w-4 h-4" />
+          </Button>
+          
+          <div className="w-px h-6 bg-gray-300 mx-2"></div>
+          
           {/* Font Size */}
           <Select value={fontSize} onValueChange={setFontSize}>
             <SelectTrigger className="w-16 h-8">
@@ -467,7 +639,8 @@ export default function Excel() {
             {columns.slice(0, 10).map((col) => (
               <div
                 key={col}
-                className="w-20 h-8 bg-gray-200 border border-gray-300 flex items-center justify-center text-xs font-medium"
+                className="w-20 h-8 bg-gray-200 border border-gray-300 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-gray-300"
+                onClick={() => selectColumn(col)}
               >
                 {col}
               </div>
@@ -478,7 +651,10 @@ export default function Excel() {
           {rows.slice(0, 20).map((row) => (
             <div key={row} className="flex">
               {/* Row Header */}
-              <div className="w-12 h-8 bg-gray-200 border border-gray-300 flex items-center justify-center text-xs font-medium">
+              <div 
+                className="w-12 h-8 bg-gray-200 border border-gray-300 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-gray-300"
+                onClick={() => selectRow(row)}
+              >
                 {row}
               </div>
               
@@ -491,7 +667,9 @@ export default function Excel() {
                   <div
                     key={cellId}
                     className={`w-20 h-8 border border-gray-300 flex items-center px-1 text-sm cursor-pointer ${
-                      isSelected ? 'bg-blue-100 border-blue-500' : 'bg-white hover:bg-gray-50'
+                      selection.selectedCells.has(cellId) 
+                        ? 'bg-blue-100 border-blue-500' 
+                        : 'bg-white hover:bg-gray-50'
                     }`}
                     onClick={() => handleCellClick(cellId)}
                     onDoubleClick={() => handleCellDoubleClick(cellId)}
