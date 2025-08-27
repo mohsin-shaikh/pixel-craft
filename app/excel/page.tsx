@@ -48,6 +48,8 @@ export default function Excel() {
     clipboard,
     columns,
     rows,
+    lastAddedColumn,
+    lastAddedRow,
     
     // Actions
     setCellValue,
@@ -66,6 +68,9 @@ export default function Excel() {
     deleteSelection,
     moveSelection,
     getCellId,
+    addNewColumn,
+    addNewRow,
+    clearLastAdded,
   } = useExcelStore();
 
   // Ensure container is focused for keyboard navigation
@@ -98,6 +103,10 @@ export default function Excel() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     console.log('Key pressed:', e.key, 'Ctrl:', e.ctrlKey, 'Meta:', e.metaKey);
+    
+    // Auto-expand functionality:
+    // - Tab on last column: adds new column
+    // - Enter on last row: adds new row
     
     // Handle clipboard shortcuts first
     if (e.ctrlKey || e.metaKey) {
@@ -228,6 +237,9 @@ export default function Excel() {
             <Edit className="w-4 h-4" />
             <span>last edited 2m ago</span>
           </div>
+        </div>
+        <div className="flex items-center space-x-2 text-gray-500 text-sm">
+          <span>Grid: {columns.length} columns × {rows.length} rows</span>
         </div>
       </div>
 
@@ -454,10 +466,14 @@ export default function Excel() {
             <div className="w-12 h-8 bg-gray-200 border border-gray-300 flex items-center justify-center text-xs font-medium">
               {/* Empty corner cell */}
             </div>
-            {columns.slice(0, 10).map((col) => (
+            {columns.map((col) => (
               <div
                 key={col}
-                className="w-20 h-8 bg-gray-200 border border-gray-300 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-gray-300"
+                className={`w-20 h-8 border border-gray-300 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-gray-300 ${
+                  lastAddedColumn === col 
+                    ? 'bg-green-200 border-green-500 animate-pulse' 
+                    : 'bg-gray-200'
+                }`}
                 onClick={() => selectColumn(col)}
               >
                 {col}
@@ -466,18 +482,22 @@ export default function Excel() {
           </div>
 
           {/* Rows */}
-          {rows.slice(0, 20).map((row) => (
+          {rows.map((row) => (
             <div key={row} className="flex">
               {/* Row Header */}
               <div 
-                className="w-12 h-8 bg-gray-200 border border-gray-300 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-gray-300"
+                className={`w-12 h-8 border border-gray-300 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-gray-300 ${
+                  lastAddedRow === row 
+                    ? 'bg-green-200 border-green-500 animate-pulse' 
+                    : 'bg-gray-200'
+                }`}
                 onClick={() => selectRow(row)}
               >
                 {row}
               </div>
               
               {/* Cells */}
-              {columns.slice(0, 10).map((col) => {
+              {columns.map((col) => {
                 const cellId = getCellId(col, row);
                 const isSelected = selectedCell === cellId;
                 const cellStyle = cellStyles[cellId] || { fontSize: '12', bold: false, italic: false, underline: false, strikethrough: false };

@@ -52,6 +52,10 @@ export interface ExcelState {
   columns: string[];
   rows: number[];
   
+  // UI feedback
+  lastAddedColumn: string | null;
+  lastAddedRow: number | null;
+  
   // Actions
   setCellValue: (cellId: string, value: string) => void;
   setCellStyle: (cellId: string, style: Partial<CellStyle>) => void;
@@ -73,6 +77,9 @@ export interface ExcelState {
   clearClipboard: () => void;
   getAdjacentCell: (cellId: string, colOffset: number, rowOffset: number) => string | null;
   getCellId: (col: string, row: number) => string;
+  addNewColumn: () => void;
+  addNewRow: () => void;
+  clearLastAdded: () => void;
 }
 
 // Helper functions
@@ -91,6 +98,16 @@ const getAdjacentCell = (cellId: string, colOffset: number, rowOffset: number, c
   }
   
   return getCellId(columns[newColIndex], newRow);
+};
+
+// Helper function to generate column letters beyond Z (AA, AB, etc.)
+const generateColumnLetter = (index: number): string => {
+  let result = '';
+  while (index >= 0) {
+    result = String.fromCharCode(65 + (index % 26)) + result;
+    index = Math.floor(index / 26) - 1;
+  }
+  return result;
 };
 
 // Initial state
@@ -149,6 +166,8 @@ export const useExcelStore = create<ExcelState>()(
       clipboard: null,
       columns,
       rows,
+      lastAddedColumn: null,
+      lastAddedRow: null,
 
       // Actions
       setCellValue: (cellId: string, value: string) => {
@@ -449,13 +468,21 @@ export const useExcelStore = create<ExcelState>()(
         
         let newCol = currentCol;
         let newRow = currentRow;
+        let shouldAddColumn = false;
+        let shouldAddRow = false;
         
         switch (direction) {
           case 'up':
             newRow = Math.max(1, currentRow - 1);
             break;
           case 'down':
-            newRow = Math.min(state.rows.length, currentRow + 1);
+            if (currentRow >= state.rows.length) {
+              // We're at the last row, add a new one
+              shouldAddRow = true;
+              newRow = currentRow + 1;
+            } else {
+              newRow = currentRow + 1;
+            }
             break;
           case 'left':
             const colIndex = state.columns.indexOf(currentCol);
@@ -465,10 +492,22 @@ export const useExcelStore = create<ExcelState>()(
             break;
           case 'right':
             const colIndexRight = state.columns.indexOf(currentCol);
-            if (colIndexRight < state.columns.length - 1) {
+            if (colIndexRight >= state.columns.length - 1) {
+              // We're at the last column, add a new one
+              shouldAddColumn = true;
+              newCol = generateColumnLetter(state.columns.length);
+            } else {
               newCol = state.columns[colIndexRight + 1];
             }
             break;
+        }
+        
+        // Add new column/row if needed
+        if (shouldAddColumn) {
+          get().addNewColumn();
+        }
+        if (shouldAddRow) {
+          get().addNewRow();
         }
         
         const newCellId = getCellId(newCol, newRow);
@@ -485,6 +524,47 @@ export const useExcelStore = create<ExcelState>()(
       },
 
       getCellId,
+
+      addNewColumn: () => {
+        const state = get();
+        const newColumns = [...state.columns];
+        const newColumn = generateColumnLetter(newColumns.length);
+        newColumns.push(newColumn);
+        console.log(`Added new column: ${newColumn}`);
+        set({ 
+          columns: newColumns,
+          lastAddedColumn: newColumn
+        });
+        
+        // Clear the highlight after 2 seconds
+        setTimeout(() => {
+          get().clearLastAdded();
+        }, 2000);
+      },
+
+      addNewRow: () => {
+        const state = get();
+        const newRows = [...state.rows];
+        const newRow = newRows.length + 1;
+        newRows.push(newRow);
+        console.log(`Added new row: ${newRow}`);
+        set({ 
+          rows: newRows,
+          lastAddedRow: newRow
+        });
+        
+        // Clear the highlight after 2 seconds
+        setTimeout(() => {
+          get().clearLastAdded();
+        }, 2000);
+      },
+
+      clearLastAdded: () => {
+        set({
+          lastAddedColumn: null,
+          lastAddedRow: null
+        });
+      },
     }),
     {
       name: 'excel-store',
