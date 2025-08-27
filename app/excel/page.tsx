@@ -4,15 +4,15 @@ import { useState, useEffect } from 'react';
 import { 
   Grid, 
   Edit, 
-  ArrowLeft, 
-  ArrowRight, 
   Copy, 
   Scissors, 
   Type, 
   ChevronDown,
   Pencil,
   Clipboard,
-  Trash2
+  Trash2,
+  Undo,
+  Redo
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
@@ -390,6 +390,11 @@ export default function Excel() {
         e.preventDefault();
         setIsEditing(false);
         moveSelectedCell('down');
+        // Automatically start editing the new cell
+        setTimeout(() => {
+          setIsEditing(true);
+          setCurrentValue('');
+        }, 0);
         return;
       }
       if (e.key === 'Escape') {
@@ -440,6 +445,11 @@ export default function Excel() {
         } else {
           moveSelectedCell('down');
         }
+        // Automatically start editing the new cell
+        setTimeout(() => {
+          setIsEditing(true);
+          setCurrentValue('');
+        }, 0);
         break;
       case 'F2':
         e.preventDefault();
@@ -563,10 +573,10 @@ export default function Excel() {
         <div className="flex items-center space-x-2">
           {/* Undo/Redo */}
           <Button variant="ghost" size="icon">
-            <ArrowLeft className="w-4 h-4" />
+            <Undo className="w-4 h-4" />
           </Button>
           <Button variant="ghost" size="icon">
-            <ArrowRight className="w-4 h-4" />
+            <Redo className="w-4 h-4" />
           </Button>
           
           <div className="w-px h-6 bg-gray-300 mx-2"></div>
