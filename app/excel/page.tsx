@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Pencil
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function Excel() {
   const [selectedCell, setSelectedCell] = useState('A1');
@@ -59,12 +60,12 @@ export default function Excel() {
       {/* Menu Bar */}
       <div className="bg-white border-b border-gray-200 px-4 py-1">
         <div className="flex space-x-6 text-sm">
-          <button className="hover:bg-gray-100 px-2 py-1 rounded">File</button>
-          <button className="hover:bg-gray-100 px-2 py-1 rounded">Edit</button>
-          <button className="hover:bg-gray-100 px-2 py-1 rounded">Insert</button>
-          <button className="hover:bg-gray-100 px-2 py-1 rounded">Format</button>
-          <button className="hover:bg-gray-100 px-2 py-1 rounded">Data</button>
-          <button className="hover:bg-gray-100 px-2 py-1 rounded">Help</button>
+          <Button variant="ghost" size="sm">File</Button>
+          <Button variant="ghost" size="sm">Edit</Button>
+          <Button variant="ghost" size="sm">Insert</Button>
+          <Button variant="ghost" size="sm">Format</Button>
+          <Button variant="ghost" size="sm">Data</Button>
+          <Button variant="ghost" size="sm">Help</Button>
         </div>
       </div>
 
@@ -72,25 +73,25 @@ export default function Excel() {
       <div className="bg-white border-b border-gray-200 px-4 py-2">
         <div className="flex items-center space-x-2">
           {/* Undo/Redo */}
-          <button className="p-1 hover:bg-gray-100 rounded">
+          <Button variant="ghost" size="icon">
             <ArrowLeft className="w-4 h-4" />
-          </button>
-          <button className="p-1 hover:bg-gray-100 rounded">
+          </Button>
+          <Button variant="ghost" size="icon">
             <ArrowRight className="w-4 h-4" />
-          </button>
+          </Button>
           
           <div className="w-px h-6 bg-gray-300 mx-2"></div>
           
           {/* Clipboard Operations */}
-          <button className="p-1 hover:bg-gray-100 rounded">
+          <Button variant="ghost" size="icon">
             <Copy className="w-4 h-4" />
-          </button>
-          <button className="p-1 hover:bg-gray-100 rounded">
+          </Button>
+          <Button variant="ghost" size="icon">
             <Scissors className="w-4 h-4" />
-          </button>
-          <button className="p-1 hover:bg-gray-100 rounded">
+          </Button>
+          <Button variant="ghost" size="icon">
             <Copy className="w-4 h-4" />
-          </button>
+          </Button>
           
           <div className="w-px h-6 bg-gray-300 mx-2"></div>
           
@@ -101,21 +102,21 @@ export default function Excel() {
           </div>
           
           {/* Text Formatting */}
-          <button className="p-1 hover:bg-gray-100 rounded font-bold">B</button>
-          <button className="p-1 hover:bg-gray-100 rounded italic">I</button>
-          <button className="p-1 hover:bg-gray-100 rounded underline">U</button>
-          <button className="p-1 hover:bg-gray-100 rounded line-through">S</button>
+          <Button variant="ghost" size="icon" className="font-bold">B</Button>
+          <Button variant="ghost" size="icon" className="italic">I</Button>
+          <Button variant="ghost" size="icon" className="underline">U</Button>
+          <Button variant="ghost" size="icon" className="line-through">S</Button>
           
           <div className="w-px h-6 bg-gray-300 mx-2"></div>
           
           {/* Other Formatting */}
-          <button className="p-1 hover:bg-gray-100 rounded flex items-center space-x-1">
+          <Button variant="ghost" size="icon">
             <Type className="w-4 h-4" />
             <ChevronDown className="w-3 h-3" />
-          </button>
-          <button className="p-1 hover:bg-gray-100 rounded">
+          </Button>
+          <Button variant="ghost" size="icon">
             <Pencil className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       </div>
 
