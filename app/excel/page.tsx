@@ -35,7 +35,25 @@ import {
 
 export default function Excel() {
   const [selectedCell, setSelectedCell] = useState('A1');
-  const [cellData, setCellData] = useState<Record<string, string>>({});
+  const [cellData, setCellData] = useState<Record<string, string>>({
+    'A1': 'Sales Report Q2',
+    'A2': 'Product',
+    'B2': 'Q1 Sales',
+    'C2': 'Q2 Sales',
+    'D2': 'Growth %',
+    'A3': 'Widget A',
+    'B3': '1250',
+    'C3': '1450',
+    'D3': '16%',
+    'A4': 'Widget B',
+    'B4': '890',
+    'C4': '1020',
+    'D4': '14.6%',
+    'A5': 'Widget C',
+    'B5': '2100',
+    'C5': '1950',
+    'D5': '-7.1%',
+  });
   const [currentValue, setCurrentValue] = useState('');
   const [fontSize, setFontSize] = useState('12');
   const [textFormatting, setTextFormatting] = useState({
@@ -43,6 +61,19 @@ export default function Excel() {
     italic: false,
     underline: false,
     strikethrough: false,
+  });
+  const [cellStyles, setCellStyles] = useState<Record<string, {
+    fontSize: string;
+    bold: boolean;
+    italic: boolean;
+    underline: boolean;
+    strikethrough: boolean;
+  }>>({
+    'A1': { fontSize: '16', bold: true, italic: false, underline: false, strikethrough: false },
+    'A2': { fontSize: '12', bold: true, italic: false, underline: false, strikethrough: false },
+    'B2': { fontSize: '12', bold: true, italic: false, underline: false, strikethrough: false },
+    'C2': { fontSize: '12', bold: true, italic: false, underline: false, strikethrough: false },
+    'D2': { fontSize: '12', bold: true, italic: false, underline: false, strikethrough: false },
   });
   const [isEditing, setIsEditing] = useState(false);
   const [clipboard, setClipboard] = useState<{ type: 'cut' | 'copy'; data: Record<string, string>; range: string } | null>(null);
@@ -191,6 +222,22 @@ export default function Excel() {
     }));
   };
 
+  const applyFormattingToSelectedCells = () => {
+    setCellStyles(prev => {
+      const newStyles = { ...prev };
+      selection.selectedCells.forEach(cellId => {
+        newStyles[cellId] = {
+          fontSize,
+          bold: textFormatting.bold,
+          italic: textFormatting.italic,
+          underline: textFormatting.underline,
+          strikethrough: textFormatting.strikethrough,
+        };
+      });
+      return newStyles;
+    });
+  };
+
   const getCellId = (col: string, row: number) => `${col}${row}`;
 
   const getAdjacentCell = (cellId: string, colOffset: number, rowOffset: number): string | null => {
@@ -260,6 +307,16 @@ export default function Excel() {
     });
     setSelectedCell(cellId);
     setCurrentValue(cellData[cellId] || '');
+    
+    // Update formatting state to match selected cell
+    const cellStyle = cellStyles[cellId] || { fontSize: '12', bold: false, italic: false, underline: false, strikethrough: false };
+    setFontSize(cellStyle.fontSize);
+    setTextFormatting({
+      bold: cellStyle.bold,
+      italic: cellStyle.italic,
+      underline: cellStyle.underline,
+      strikethrough: cellStyle.strikethrough,
+    });
   };
 
   const moveSelectedCell = (direction: 'up' | 'down' | 'left' | 'right') => {
@@ -535,7 +592,10 @@ export default function Excel() {
           <div className="w-px h-6 bg-gray-300 mx-2"></div>
           
           {/* Font Size */}
-          <Select value={fontSize} onValueChange={setFontSize}>
+          <Select value={fontSize} onValueChange={(value) => {
+            setFontSize(value);
+            applyFormattingToSelectedCells();
+          }}>
             <SelectTrigger className="w-16 h-8">
               <SelectValue />
             </SelectTrigger>
@@ -560,9 +620,10 @@ export default function Excel() {
           <Toggle
             size="sm"
             pressed={textFormatting.bold}
-            onPressedChange={(pressed) =>
-              setTextFormatting(prev => ({ ...prev, bold: pressed }))
-            }
+            onPressedChange={(pressed) => {
+              setTextFormatting(prev => ({ ...prev, bold: pressed }));
+              applyFormattingToSelectedCells();
+            }}
             className="font-bold w-8 h-8"
           >
             B
@@ -570,9 +631,10 @@ export default function Excel() {
           <Toggle
             size="sm"
             pressed={textFormatting.italic}
-            onPressedChange={(pressed) =>
-              setTextFormatting(prev => ({ ...prev, italic: pressed }))
-            }
+            onPressedChange={(pressed) => {
+              setTextFormatting(prev => ({ ...prev, italic: pressed }));
+              applyFormattingToSelectedCells();
+            }}
             className="italic w-8 h-8"
           >
             I
@@ -580,9 +642,10 @@ export default function Excel() {
           <Toggle
             size="sm"
             pressed={textFormatting.underline}
-            onPressedChange={(pressed) =>
-              setTextFormatting(prev => ({ ...prev, underline: pressed }))
-            }
+            onPressedChange={(pressed) => {
+              setTextFormatting(prev => ({ ...prev, underline: pressed }));
+              applyFormattingToSelectedCells();
+            }}
             className="underline w-8 h-8"
           >
             U
@@ -590,9 +653,10 @@ export default function Excel() {
           <Toggle
             size="sm"
             pressed={textFormatting.strikethrough}
-            onPressedChange={(pressed) =>
-              setTextFormatting(prev => ({ ...prev, strikethrough: pressed }))
-            }
+            onPressedChange={(pressed) => {
+              setTextFormatting(prev => ({ ...prev, strikethrough: pressed }));
+              applyFormattingToSelectedCells();
+            }}
             className="line-through w-8 h-8"
           >
             S
@@ -662,6 +726,7 @@ export default function Excel() {
               {columns.slice(0, 10).map((col) => {
                 const cellId = getCellId(col, row);
                 const isSelected = selectedCell === cellId;
+                const cellStyle = cellStyles[cellId] || { fontSize: '12', bold: false, italic: false, underline: false, strikethrough: false };
                 
                 return (
                   <div
@@ -684,7 +749,19 @@ export default function Excel() {
                         autoFocus
                       />
                     ) : (
-                      <span className="truncate">{cellData[cellId] || ''}</span>
+                      <span 
+                        className="truncate"
+                        style={{
+                          fontSize: `${cellStyle.fontSize}px`,
+                          fontWeight: cellStyle.bold ? 'bold' : 'normal',
+                          fontStyle: cellStyle.italic ? 'italic' : 'normal',
+                          textDecoration: cellStyle.underline 
+                            ? (cellStyle.strikethrough ? 'underline line-through' : 'underline')
+                            : (cellStyle.strikethrough ? 'line-through' : 'none')
+                        }}
+                      >
+                        {cellData[cellId] || ''}
+                      </span>
                     )}
                   </div>
                 );
