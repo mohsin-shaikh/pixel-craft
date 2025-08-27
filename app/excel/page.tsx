@@ -10,7 +10,8 @@ import {
   Scissors, 
   Type, 
   ChevronDown,
-  Pencil
+  Pencil,
+  Clipboard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
@@ -43,6 +44,7 @@ export default function Excel() {
     strikethrough: false,
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [clipboard, setClipboard] = useState<{ type: 'cut' | 'copy'; data: string; cellId: string } | null>(null);
 
   const columns = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
   const rows = Array.from({ length: 50 }, (_, i) => i + 1);
@@ -57,6 +59,58 @@ export default function Excel() {
     setSelectedCell(cellId);
     setCurrentValue(cellData[cellId] || '');
     setIsEditing(true);
+  };
+
+  const handleCopy = () => {
+    const data = cellData[selectedCell] || '';
+    setClipboard({ type: 'copy', data, cellId: selectedCell });
+    // Also copy to system clipboard
+    navigator.clipboard.writeText(data).catch(() => {
+      // Fallback if clipboard API is not available
+      console.log('Clipboard API not available');
+    });
+  };
+
+  const handleCut = () => {
+    const data = cellData[selectedCell] || '';
+    setClipboard({ type: 'cut', data, cellId: selectedCell });
+    // Clear the cell data
+    setCellData(prev => {
+      const newData = { ...prev };
+      delete newData[selectedCell];
+      return newData;
+    });
+    setCurrentValue('');
+    // Also copy to system clipboard
+    navigator.clipboard.writeText(data).catch(() => {
+      console.log('Clipboard API not available');
+    });
+  };
+
+  const handlePaste = () => {
+    if (clipboard) {
+      setCellData(prev => ({
+        ...prev,
+        [selectedCell]: clipboard.data
+      }));
+      setCurrentValue(clipboard.data);
+      
+      // If it was a cut operation, clear the clipboard
+      if (clipboard.type === 'cut') {
+        setClipboard(null);
+      }
+    } else {
+      // Try to paste from system clipboard
+      navigator.clipboard.readText().then(text => {
+        setCellData(prev => ({
+          ...prev,
+          [selectedCell]: text
+        }));
+        setCurrentValue(text);
+      }).catch(() => {
+        console.log('Clipboard API not available');
+      });
+    }
   };
 
   const handleCellChange = (value: string) => {
@@ -103,6 +157,24 @@ export default function Excel() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Handle clipboard shortcuts first
+    if (e.ctrlKey || e.metaKey) {
+      switch (e.key.toLowerCase()) {
+        case 'c':
+          e.preventDefault();
+          handleCopy();
+          return;
+        case 'x':
+          e.preventDefault();
+          handleCut();
+          return;
+        case 'v':
+          e.preventDefault();
+          handlePaste();
+          return;
+      }
+    }
+
     // If we're editing a cell, don't handle navigation keys
     if (isEditing) {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -278,14 +350,14 @@ export default function Excel() {
           <div className="w-px h-6 bg-gray-300 mx-2"></div>
           
           {/* Clipboard Operations */}
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" onClick={handleCopy} title="Copy (Ctrl+C)">
             <Copy className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" onClick={handleCut} title="Cut (Ctrl+X)">
             <Scissors className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="icon">
-            <Copy className="w-4 h-4" />
+          <Button variant="ghost" size="icon" onClick={handlePaste} title="Paste (Ctrl+V)">
+            <Clipboard className="w-4 h-4" />
           </Button>
           
           <div className="w-px h-6 bg-gray-300 mx-2"></div>
