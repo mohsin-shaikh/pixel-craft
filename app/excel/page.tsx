@@ -42,6 +42,7 @@ export default function Excel() {
     underline: false,
     strikethrough: false,
   });
+  const [isEditing, setIsEditing] = useState(false);
 
   const columns = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
   const rows = Array.from({ length: 50 }, (_, i) => i + 1);
@@ -49,6 +50,13 @@ export default function Excel() {
   const handleCellClick = (cellId: string) => {
     setSelectedCell(cellId);
     setCurrentValue(cellData[cellId] || '');
+    setIsEditing(false);
+  };
+
+  const handleCellDoubleClick = (cellId: string) => {
+    setSelectedCell(cellId);
+    setCurrentValue(cellData[cellId] || '');
+    setIsEditing(true);
   };
 
   const handleCellChange = (value: string) => {
@@ -95,6 +103,30 @@ export default function Excel() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // If we're editing a cell, don't handle navigation keys
+    if (isEditing) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        setIsEditing(false);
+        moveSelectedCell('down');
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setIsEditing(false);
+        setCurrentValue(cellData[selectedCell] || '');
+        return;
+      }
+      return;
+    }
+
+    // Handle direct typing for alphanumeric keys
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+      setIsEditing(true);
+      setCurrentValue('');
+      return;
+    }
+
     switch (e.key) {
       case 'ArrowUp':
         e.preventDefault();
@@ -127,6 +159,10 @@ export default function Excel() {
         } else {
           moveSelectedCell('down');
         }
+        break;
+      case 'F2':
+        e.preventDefault();
+        setIsEditing(true);
         break;
     }
   };
@@ -386,8 +422,20 @@ export default function Excel() {
                       isSelected ? 'bg-blue-100 border-blue-500' : 'bg-white hover:bg-gray-50'
                     }`}
                     onClick={() => handleCellClick(cellId)}
+                    onDoubleClick={() => handleCellDoubleClick(cellId)}
                   >
-                    <span className="truncate">{cellData[cellId] || ''}</span>
+                    {isSelected && isEditing ? (
+                      <input
+                        type="text"
+                        value={currentValue}
+                        onChange={(e) => handleCellChange(e.target.value)}
+                        onBlur={() => setIsEditing(false)}
+                        className="w-full h-full bg-transparent outline-none text-sm"
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="truncate">{cellData[cellId] || ''}</span>
+                    )}
                   </div>
                 );
               })}
