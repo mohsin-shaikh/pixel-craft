@@ -461,10 +461,10 @@ export default function Excel() {
       {/* Spreadsheet Grid */}
       <div className="flex-1 overflow-auto">
         <div className="inline-block">
-          {/* Column Headers */}
-          <div className="flex">
-            <div className="w-12 h-8 bg-gray-200 border border-gray-300 flex items-center justify-center text-xs font-medium">
-              {/* Empty corner cell */}
+          {/* Column Headers - Sticky Top */}
+          <div className="flex sticky top-0 z-10 bg-white shadow-sm">
+            <div className="w-12 h-8 bg-gray-200 border border-gray-300 flex items-center justify-center text-xs font-medium sticky left-0 z-20">
+              {/* Empty corner cell - sticky top and left */}
             </div>
             {columns.map((col) => (
               <div
@@ -484,9 +484,9 @@ export default function Excel() {
           {/* Rows */}
           {rows.map((row) => (
             <div key={row} className="flex">
-              {/* Row Header */}
+              {/* Row Header - Sticky Left */}
               <div 
-                className={`w-12 h-8 border border-gray-300 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-gray-300 ${
+                className={`w-12 h-8 border border-gray-300 flex items-center justify-center text-xs font-medium cursor-pointer hover:bg-gray-300 sticky left-0 z-10 ${
                   lastAddedRow === row 
                     ? 'bg-green-200 border-green-500 animate-pulse' 
                     : 'bg-gray-200'
