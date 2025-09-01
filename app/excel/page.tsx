@@ -463,7 +463,7 @@ export default function Excel() {
         <div className="inline-block">
           {/* Column Headers - Sticky Top */}
           <div className="flex sticky top-0 z-10 bg-white shadow-sm">
-            <div className="w-12 h-8 bg-gray-200 border border-gray-300 flex items-center justify-center text-xs font-medium sticky left-0 z-20">
+            <div className="w-12 h-8 bg-red-200 border border-gray-300 flex items-center justify-center text-xs font-medium sticky left-0 top-0 z-20">
               {/* Empty corner cell - sticky top and left */}
             </div>
             {columns.map((col) => (
